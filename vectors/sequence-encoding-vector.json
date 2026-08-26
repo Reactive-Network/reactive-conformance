@@ -1,0 +1,751 @@
+{
+  "schema": "rnk.sequence-encoding-vector.v1",
+  "about": "The normative byte-level encoding vector for the RNK sequence certificate and logs tree. Forty cases. Every digest here is transcribed from the pinned construction document, never regenerated; a digest that appears to have moved is a finding, not a value to update. Two repositories compute these hashes: reactive-tornado (Go, the consensus side) and the Sequencer's certificate issuer (TypeScript). This file is the only artifact either side may treat as normative, and it is fetched, never copied.",
+  "sourceDocument": "abci/rnk/docs/sequence-encoding-construction.md, revision 4 (2026-08-21)",
+  "caseCount": 40,
+  "layout": {
+    "leaf": "leafTag(14 raw ASCII) | seqNumber(8 BE) | status(8 BE) | txHash(32) | address(20) | nTopics(4 BE) | topics(32 each) | lenData(4 BE) | data - total 90 + 32*nTopics + lenData bytes. The log INDEX is not a field.",
+    "node": "nodeTag(14 raw ASCII) | left(32) | right(32) - 78 bytes",
+    "cert": "certTag(14 raw ASCII) | NetworkId(8 BE) | SeqNumber(8 BE) | Kind(1) | KeyId(4 BE) | ChainId(8 BE) | BlockHash(32) | ParentHash(32) | Number(8 BE) | Time(8 BE) | LogCount(4 BE) | LogsRoot(32) - 159 bytes, always",
+    "tree": "RFC 6962 section 2.1, both base cases: MTH({}) = keccak256(\"\"); MTH({d0}) = leaf(d0); MTH(D[n]) = node(MTH(D[0:k]), MTH(D[k:n])) with k the largest power of two STRICTLY below n. No padding; n need not be a power of two. No interior node is applied at n = 1 and no root tag is applied.",
+    "proof": "Deduplicated RFC 6962 section 2.1.1 audit paths. Node identity is the leaf interval [lo, hi), never (level, index). The table is transmitted in ascending canonical interval order (lo then hi); the verifier regenerates that list from LogCount and the carried indices and folds each leaf in RFC 6962's own order, which is NOT the table order.",
+    "signature": "secp256k1 over certDigest, 65 bytes r || s || v, low-S, and v is the recovery id 0 or 1 - NOT the {27,28} most Ethereum tooling emits.",
+    "integers": "Every integer is a fixed-width big-endian field. No RLP, protobuf or JSON appears inside a hashed preimage. Decimal integers in this file are STRINGS so that no parser has to hold 2^64-1 as a float."
+  },
+  "constants": {
+    "leafTag": {
+      "ascii": "rnk.seqleaf.v1",
+      "hex": "0x726e6b2e7365716c6561662e7631",
+      "case": "tag/leaf"
+    },
+    "nodeTag": {
+      "ascii": "rnk.seqnode.v1",
+      "hex": "0x726e6b2e7365716e6f64652e7631",
+      "case": "tag/node"
+    },
+    "certTag": {
+      "ascii": "rnk.seqcert.v1",
+      "hex": "0x726e6b2e736571636572742e7631",
+      "case": "tag/cert"
+    },
+    "kindVoid": "0x00",
+    "kindPresent": "0x01",
+    "leafPreimagePrefixLength": 90,
+    "nodePreimageLength": 78,
+    "certPreimageLength": 159,
+    "signatureLength": 65,
+    "emptyTreeRoot": {
+      "case": "tree/n0-empty-root",
+      "value": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+      "note": "RFC 6962 section 2.1's own MTH({}) = HASH(\"\"). Not the zero hash, so \"no root\" and \"the root of nothing\" stay distinguishable. It equals Ethereum's EMPTY_CODE_HASH, which is a registered coincidence."
+    }
+  },
+  "hashControls": [
+    {
+      "case": "control/keccak-empty",
+      "input": "0x",
+      "digest": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+    },
+    {
+      "case": "control/keccak-abc",
+      "input": "0x616263",
+      "inputAscii": "abc",
+      "digest": "0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45"
+    },
+    {
+      "case": "control/keccak-single-zero-byte",
+      "input": "0x00",
+      "digest": "0xbc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a"
+    }
+  ],
+  "leaves": [
+    {
+      "case": "leaf/all-zero-no-topics-no-data",
+      "seqNumber": "0",
+      "status": "0",
+      "txHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "address": "0x0000000000000000000000000000000000000000",
+      "topics": [],
+      "data": "0x",
+      "preimageLength": 90,
+      "leafHash": "0x75cd01e8acef921deb743e60840f7c6bea1f5f2fef3761ced72602140bbe51c9"
+    },
+    {
+      "case": "leaf/leading-zero-ints-empty-data",
+      "seqNumber": "1",
+      "status": "0",
+      "txHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "address": "0x2222222222222222222222222222222222222222",
+      "topics": [
+        "0x3333333333333333333333333333333333333333333333333333333333333333"
+      ],
+      "data": "0x",
+      "preimageLength": 122,
+      "leafHash": "0x02da1614e4b015908366b4dd795ec28b8d6341b95b224805f9b543db13de9923"
+    },
+    {
+      "case": "leaf/status-0",
+      "seqNumber": "7",
+      "status": "0",
+      "txHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "topics": [
+        "0x4040404040404040404040404040404040404040404040404040404040404040",
+        "0x4141414141414141414141414141414141414141414141414141414141414141"
+      ],
+      "data": "0xdead",
+      "preimageLength": 156,
+      "leafHash": "0x68ffaa8f7ba4ded43b7d45c1806185df23b4f3a4caf7d6f8f97a1169457f04a8"
+    },
+    {
+      "case": "leaf/status-1",
+      "seqNumber": "7",
+      "status": "1",
+      "txHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "topics": [
+        "0x4040404040404040404040404040404040404040404040404040404040404040",
+        "0x4141414141414141414141414141414141414141414141414141414141414141"
+      ],
+      "data": "0xdead",
+      "preimageLength": 156,
+      "leafHash": "0xc2cbe1e0fda342f9d89460332dcd9aca4ebbbd9a564b52cbb4d2332f673b251f"
+    },
+    {
+      "case": "leaf/topics-0",
+      "seqNumber": "9",
+      "status": "1",
+      "txHash": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "address": "0xc2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+      "topics": [],
+      "data": "0x01",
+      "preimageLength": 91,
+      "leafHash": "0x2f3e02668dea2028dcb35f402bd13fcb8a35d78a173a75323c00c6720c0750ec"
+    },
+    {
+      "case": "leaf/topics-1",
+      "seqNumber": "9",
+      "status": "1",
+      "txHash": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "address": "0xc2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+      "topics": [
+        "0x5050505050505050505050505050505050505050505050505050505050505050"
+      ],
+      "data": "0x01",
+      "preimageLength": 123,
+      "leafHash": "0x3aaea2b5147299b1471ac1cdd8df1674479cfe5d390c5f5b4edb6dce73ceb927"
+    },
+    {
+      "case": "leaf/topics-4",
+      "seqNumber": "9",
+      "status": "1",
+      "txHash": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "address": "0xc2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+      "topics": [
+        "0x5050505050505050505050505050505050505050505050505050505050505050",
+        "0x5151515151515151515151515151515151515151515151515151515151515151",
+        "0x5252525252525252525252525252525252525252525252525252525252525252",
+        "0x5353535353535353535353535353535353535353535353535353535353535353"
+      ],
+      "data": "0x01",
+      "preimageLength": 219,
+      "leafHash": "0x6d19022366e13bb28324973d9461618d5a79f67496f699da9b0dfa36b11fa99e"
+    },
+    {
+      "case": "leaf/topics-5",
+      "seqNumber": "9",
+      "status": "1",
+      "txHash": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+      "address": "0xc2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
+      "topics": [
+        "0x5050505050505050505050505050505050505050505050505050505050505050",
+        "0x5151515151515151515151515151515151515151515151515151515151515151",
+        "0x5252525252525252525252525252525252525252525252525252525252525252",
+        "0x5353535353535353535353535353535353535353535353535353535353535353",
+        "0x5454545454545454545454545454545454545454545454545454545454545454"
+      ],
+      "data": "0x01",
+      "preimageLength": 251,
+      "leafHash": "0x9d7b1cc84a6e35a155e121b8689ff09582f250a5b519a6180eddd55677d39295"
+    },
+    {
+      "case": "leaf/max-width-ints",
+      "seqNumber": "18446744073709551615",
+      "status": "18446744073709551615",
+      "txHash": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "address": "0xffffffffffffffffffffffffffffffffffffffff",
+      "topics": [
+        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      ],
+      "data": "0xff",
+      "preimageLength": 123,
+      "leafHash": "0x81632063816914cbd1a19d0f458ba20875ad07679e36376fac914e06de8822c1"
+    },
+    {
+      "case": "leaf/data-512B-multiblock",
+      "seqNumber": "11",
+      "status": "1",
+      "txHash": "0x0101010101010101010101010101010101010101010101010101010101010101",
+      "address": "0x0202020202020202020202020202020202020202",
+      "topics": [
+        "0x6060606060606060606060606060606060606060606060606060606060606060"
+      ],
+      "data": "0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "preimageLength": 634,
+      "leafHash": "0x83ec2817ff134993e48dd4c9dba10a546fef85cc43ce1574bb44ee251db164a8"
+    }
+  ],
+  "generator": {
+    "note": "The leaf generator behind every tree/* and proof/* case. Its inputs genuinely are a RULE rather than a list, so the rule is given as parameters and the first leaves are given explicitly as a control on any implementation of it. The byte arithmetic WRAPS at 256 - tree/n1024-root needs that for i up to 1023.",
+    "rule": "leaf i: status = status, txHash = the byte (txHashBase + i) mod 256 repeated 32 times, address = the byte addressByte repeated 20 times, topics = [ the byte (topic0Base + i) mod 256 repeated 32, the byte (topic1Base + i) mod 256 repeated 32 ], data = the byte (i mod 256) repeated (i mod dataLengthModulus) times.",
+    "status": "1",
+    "txHashBase": 16,
+    "addressByte": 32,
+    "topic0Base": 48,
+    "topic1Base": 49,
+    "dataLengthModulus": 7,
+    "explicitLeaves": [
+      {
+        "seqNumber": "42",
+        "note": "The leaves of every tree/* and proof/* case.",
+        "leaves": [
+          {
+            "index": 0,
+            "seqNumber": "42",
+            "status": "1",
+            "txHash": "0x1010101010101010101010101010101010101010101010101010101010101010",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3030303030303030303030303030303030303030303030303030303030303030",
+              "0x3131313131313131313131313131313131313131313131313131313131313131"
+            ],
+            "data": "0x",
+            "preimageLength": 154,
+            "leafHash": "0x384c59089c8b8f62c2cfc3371759f4b310f280ad9c7c104958f0ed814a07280c"
+          },
+          {
+            "index": 1,
+            "seqNumber": "42",
+            "status": "1",
+            "txHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3131313131313131313131313131313131313131313131313131313131313131",
+              "0x3232323232323232323232323232323232323232323232323232323232323232"
+            ],
+            "data": "0x01",
+            "preimageLength": 155,
+            "leafHash": "0x0a078127169f37f51eebef2b2f25b0a6f9af6045bb11e120205bf375508fff1e"
+          },
+          {
+            "index": 2,
+            "seqNumber": "42",
+            "status": "1",
+            "txHash": "0x1212121212121212121212121212121212121212121212121212121212121212",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3232323232323232323232323232323232323232323232323232323232323232",
+              "0x3333333333333333333333333333333333333333333333333333333333333333"
+            ],
+            "data": "0x0202",
+            "preimageLength": 156,
+            "leafHash": "0x53f51ec1f6c17d8f1377ce1c9ee64fdfaa659fbbfcb9d6d5320f16771f32150b"
+          },
+          {
+            "index": 3,
+            "seqNumber": "42",
+            "status": "1",
+            "txHash": "0x1313131313131313131313131313131313131313131313131313131313131313",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3333333333333333333333333333333333333333333333333333333333333333",
+              "0x3434343434343434343434343434343434343434343434343434343434343434"
+            ],
+            "data": "0x030303",
+            "preimageLength": 157,
+            "leafHash": "0xae62879ceb06125802985837ec3755f4c9b8f292be73e448642e25094b809aef"
+          },
+          {
+            "index": 4,
+            "seqNumber": "42",
+            "status": "1",
+            "txHash": "0x1414141414141414141414141414141414141414141414141414141414141414",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3434343434343434343434343434343434343434343434343434343434343434",
+              "0x3535353535353535353535353535353535353535353535353535353535353535"
+            ],
+            "data": "0x04040404",
+            "preimageLength": 158,
+            "leafHash": "0x90debd54d3ebd4a2fbe247b930f81b7c5a773d4871ebf9bf2188ce4e6836df2d"
+          }
+        ]
+      },
+      {
+        "seqNumber": "101",
+        "note": "The three leaves of the tree both cert/present-* cases commit to. Their hashes are pinned in the source document; the root below is the value the cert/* cases carry as LogsRoot.",
+        "leaves": [
+          {
+            "index": 0,
+            "seqNumber": "101",
+            "status": "1",
+            "txHash": "0x1010101010101010101010101010101010101010101010101010101010101010",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3030303030303030303030303030303030303030303030303030303030303030",
+              "0x3131313131313131313131313131313131313131313131313131313131313131"
+            ],
+            "data": "0x",
+            "preimageLength": 154,
+            "leafHash": "0x3db5b616d7db1247cd17a8a48674363d6e3b8a6e6749083a17fb06a8423fada1"
+          },
+          {
+            "index": 1,
+            "seqNumber": "101",
+            "status": "1",
+            "txHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3131313131313131313131313131313131313131313131313131313131313131",
+              "0x3232323232323232323232323232323232323232323232323232323232323232"
+            ],
+            "data": "0x01",
+            "preimageLength": 155,
+            "leafHash": "0x37473f7933f7dcde99f19ed138cec6c4996df33fd052b4165262739e1b6a5bc7"
+          },
+          {
+            "index": 2,
+            "seqNumber": "101",
+            "status": "1",
+            "txHash": "0x1212121212121212121212121212121212121212121212121212121212121212",
+            "address": "0x2020202020202020202020202020202020202020",
+            "topics": [
+              "0x3232323232323232323232323232323232323232323232323232323232323232",
+              "0x3333333333333333333333333333333333333333333333333333333333333333"
+            ],
+            "data": "0x0202",
+            "preimageLength": 156,
+            "leafHash": "0xa2cb7af72b7fa10761a89f9a4948feb871f7307421a32fae5098b256b3aa5715"
+          }
+        ],
+        "logsRoot": "0x8c6e26c25502a62aa23c5ae614f1c237da67c382b9844b539275ea3da07011cf"
+      }
+    ]
+  },
+  "trees": [
+    {
+      "case": "tree/n0-empty-root",
+      "n": 0,
+      "generatorSeqNumber": 42,
+      "root": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+      "note": "n = 0 has no leaves; the case every void certificate hits."
+    },
+    {
+      "case": "tree/n1-root",
+      "n": 1,
+      "generatorSeqNumber": 42,
+      "root": "0x384c59089c8b8f62c2cfc3371759f4b310f280ad9c7c104958f0ed814a07280c",
+      "note": "The root of a one-leaf tree IS the leaf hash. No interior node."
+    },
+    {
+      "case": "tree/n2-root",
+      "n": 2,
+      "generatorSeqNumber": 42,
+      "root": "0x70234db48f8bf93dd3ce3697907e8a55b7c2db1d0e32e962801d984bf679f2ea"
+    },
+    {
+      "case": "tree/n3-root",
+      "n": 3,
+      "generatorSeqNumber": 42,
+      "root": "0x37e938814ba430e5cfd9f95b8347ccf131ed70ccf5b1508da536269dce08b86b"
+    },
+    {
+      "case": "tree/n4-root",
+      "n": 4,
+      "generatorSeqNumber": 42,
+      "root": "0x78ea4bd1d9613132b8a9575d1ef81b4f9619f7ba6f3b9000e855d86cff5ec50a"
+    },
+    {
+      "case": "tree/n5-root",
+      "n": 5,
+      "generatorSeqNumber": 42,
+      "root": "0x23ed8d42b4a8579bd3a25a83d7622f771c40288ea6ae38fa4329e450ccd3e388"
+    },
+    {
+      "case": "tree/n6-root",
+      "n": 6,
+      "generatorSeqNumber": 42,
+      "root": "0xb96f1b79377e730929c45e8b18ca8a27dab0f631de5353fba549511f854e405f"
+    },
+    {
+      "case": "tree/n7-root",
+      "n": 7,
+      "generatorSeqNumber": 42,
+      "root": "0xd9dd638e60699de2a7cbc7c19aa99647fff7aa6fa32d340abd20f776f5baf10b"
+    },
+    {
+      "case": "tree/n8-root",
+      "n": 8,
+      "generatorSeqNumber": 42,
+      "root": "0x97e20e75e216ea00ac7042e58581809f25089063269232ca712172ca07274800"
+    },
+    {
+      "case": "tree/n9-root",
+      "n": 9,
+      "generatorSeqNumber": 42,
+      "root": "0x4fe060c411d303a0140f3af069206cc43f8f1dec0d8945963db9a93c2d477e31"
+    },
+    {
+      "case": "tree/n1024-root",
+      "n": 1024,
+      "generatorSeqNumber": 42,
+      "root": "0x1f6d32df0e7bc2866f7ed9cb5075bdb51671d60088d777f7925ceb18342a9be5"
+    }
+  ],
+  "proofs": [
+    {
+      "case": "proof/n5-carried-1-and-4",
+      "logCount": 5,
+      "carried": [
+        1,
+        4
+      ],
+      "generatorSeqNumber": 42,
+      "root": "0x23ed8d42b4a8579bd3a25a83d7622f771c40288ea6ae38fa4329e450ccd3e388",
+      "undedupedPathHashes": 4,
+      "expectedHashCount": 4,
+      "tableOrder": [
+        "[0,1)",
+        "[0,4)",
+        "[2,4)",
+        "[4,5)"
+      ],
+      "hashes": {
+        "[0,1)": "0x384c59089c8b8f62c2cfc3371759f4b310f280ad9c7c104958f0ed814a07280c",
+        "[0,4)": "0x78ea4bd1d9613132b8a9575d1ef81b4f9619f7ba6f3b9000e855d86cff5ec50a",
+        "[2,4)": "0x6f17319bb92ae728326c4e8237525348b9fa1f7b0f4a7cde1febb98194000db6",
+        "[4,5)": "0x90debd54d3ebd4a2fbe247b930f81b7c5a773d4871ebf9bf2188ce4e6836df2d"
+      }
+    },
+    {
+      "case": "proof/n8-carried-0-and-1-shared-nodes",
+      "logCount": 8,
+      "carried": [
+        0,
+        1
+      ],
+      "generatorSeqNumber": 42,
+      "root": "0x97e20e75e216ea00ac7042e58581809f25089063269232ca712172ca07274800",
+      "undedupedPathHashes": 6,
+      "expectedHashCount": 4,
+      "tableOrder": [
+        "[0,1)",
+        "[1,2)",
+        "[2,4)",
+        "[4,8)"
+      ],
+      "hashes": {
+        "[0,1)": "0x384c59089c8b8f62c2cfc3371759f4b310f280ad9c7c104958f0ed814a07280c",
+        "[1,2)": "0x0a078127169f37f51eebef2b2f25b0a6f9af6045bb11e120205bf375508fff1e",
+        "[2,4)": "0x6f17319bb92ae728326c4e8237525348b9fa1f7b0f4a7cde1febb98194000db6",
+        "[4,8)": "0x4c663bf5e4812b7babc6798c8c85d6f2aede7fb84b573993c27069eacdb8036d"
+      }
+    },
+    {
+      "case": "proof/n5-carried-2-fold-order-differs-from-table-order",
+      "logCount": 5,
+      "carried": [
+        2
+      ],
+      "generatorSeqNumber": 42,
+      "root": "0x23ed8d42b4a8579bd3a25a83d7622f771c40288ea6ae38fa4329e450ccd3e388",
+      "expectedHashCount": 3,
+      "tableOrder": [
+        "[0,2)",
+        "[3,4)",
+        "[4,5)"
+      ],
+      "foldOrder": [
+        "[3,4)",
+        "[0,2)",
+        "[4,5)"
+      ],
+      "foldSides": [
+        "right",
+        "left",
+        "right"
+      ],
+      "carriedLeafHash": "0x53f51ec1f6c17d8f1377ce1c9ee64fdfaa659fbbfcb9d6d5320f16771f32150b",
+      "wrongAnswerTableOrderReadAsFoldOrder": "0xdc663e18feeb29282ab6859edfc9c98a4e68e7e273907aef8325129c3bdd0c84",
+      "hashes": {
+        "[0,2)": "0x70234db48f8bf93dd3ce3697907e8a55b7c2db1d0e32e962801d984bf679f2ea",
+        "[3,4)": "0xae62879ceb06125802985837ec3755f4c9b8f292be73e448642e25094b809aef",
+        "[4,5)": "0x90debd54d3ebd4a2fbe247b930f81b7c5a773d4871ebf9bf2188ce4e6836df2d"
+      }
+    }
+  ],
+  "flatten": [
+    {
+      "case": "flatten/multi-receipt-mixed-status",
+      "seqNumber": 7331,
+      "receipts": [
+        {
+          "status": 1,
+          "txHash": "0x00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+          "logs": [
+            {
+              "address": "0x0102030405060708090a0b0c0d0e0f1011121314",
+              "topics": [
+                "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+                "0x000000000000000000000000000000000000000000000000000000000000002a"
+              ],
+              "data": "0x"
+            },
+            {
+              "address": "0xfeedfacecafebeef0000000000000000deadbeef",
+              "topics": [],
+              "data": "0x2a"
+            }
+          ]
+        },
+        {
+          "status": 0,
+          "txHash": "0xffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+          "logs": [
+            {
+              "address": "0x00000000000000000000000000000000000000ff",
+              "topics": [
+                "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
+              ],
+              "data": "0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
+            }
+          ]
+        },
+        {
+          "status": 1,
+          "txHash": "0x0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+          "logs": []
+        },
+        {
+          "status": 1,
+          "txHash": "0x000000000000000000000000000000000000000000000000000000000000dead",
+          "logs": [
+            {
+              "address": "0x0102030405060708090a0b0c0d0e0f1011121314",
+              "topics": [
+                "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+                "0x000000000000000000000000000000000000000000000000000000000000002a",
+                "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+              ],
+              "data": "0x"
+            },
+            {
+              "address": "0xfeedfacecafebeef0000000000000000deadbeef",
+              "topics": [
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+              ],
+              "data": "0x00"
+            }
+          ]
+        }
+      ],
+      "logCount": 5,
+      "leafHashes": [
+        "0x351a95c9aa36f1ed6b64f8bce655f9d5446cc6b6dd62a24c328df13086ca1f6c",
+        "0x1dffafea4a381a7ea30d50cb8405ce43e735662d808fe03ca11601398d317133",
+        "0xf41b24fe6e162189f80472056af44c49328adb6616f0a7cc46ad544d5db7b9cd",
+        "0x3a636033b4e7dc24953282c95f91d739d5741f42693b051dcf3e48a58d0eefab",
+        "0x21b32bcdf8993115176f9afa68e2a2246ad301b9f0df89bc2c1838650ae6f0bd"
+      ],
+      "logsRoot": "0x6c73c82fd52ab32802868b078be537b90b1f0fc8d4b861a61e5bda80004532fc",
+      "wrongAnswers": {
+        "zeroesEveryLeafTxHash": "0x3132c9325157aa2bba99716c5195f9c28c3d5e548b25dd2042578b9c91e95391",
+        "forcesStatusToOneOnEveryLeaf": "0x735fe2c75b63ed7fbf7336f0a327ab80b702cc6191a0bc8d31a7911ff2f21564",
+        "iteratesTheReceiptsInReverse": "0x4036595dae7c0f64fd3363dac8d12d6795e2fbb77deb8b54336d8bf5d48b416c"
+      }
+    },
+    {
+      "case": "flatten/wire-width-normalisation",
+      "seqNumber": 9001,
+      "chainId": 1,
+      "receipts": [
+        {
+          "status": 1,
+          "txHashRaw": "0x112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+          "txHash": "0x00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+          "logs": [
+            {
+              "addressRaw": "0x0102030405060708090a0b0c0d0e0f10111213",
+              "address": "0x000102030405060708090a0b0c0d0e0f10111213",
+              "topicsRaw": [
+                "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                "0xaabb0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                "0x"
+              ],
+              "topics": [
+                "0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                "0xbb0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                "0x0000000000000000000000000000000000000000000000000000000000000000"
+              ],
+              "dataRaw": "0x01",
+              "data": "0x01"
+            }
+          ]
+        },
+        {
+          "status": 1,
+          "txHashRaw": "0xff0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+          "txHash": "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+          "logs": [
+            {
+              "addressRaw": "0xaa0102030405060708090a0b0c0d0e0f1011121314",
+              "address": "0x0102030405060708090a0b0c0d0e0f1011121314",
+              "topicsRaw": [
+                "0x11111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222"
+              ],
+              "topics": [
+                "0x2222222222222222222222222222222222222222222222222222222222222222"
+              ],
+              "dataRaw": "0x",
+              "data": "0x"
+            }
+          ]
+        }
+      ],
+      "logCount": 2,
+      "leafHashes": [
+        "0xc470390dfb1d69cc34d89943ab7f9c1b79a80856489272570d1ff28c02ade32c",
+        "0xc3e68996f535d7a3027fdc22063586abac1700512ddf024406592458e8a7c0a1"
+      ],
+      "logsRoot": "0x8993370d4bd1cfc89b86d683ed0df0dcc4377ad54b97d54ba478cbf8d36cac6a"
+    }
+  ],
+  "certificates": [
+    {
+      "case": "cert/void-zero-leaf",
+      "networkId": "1597",
+      "seqNumber": "100",
+      "kind": "0x00",
+      "keyId": "0",
+      "chainId": "0",
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "number": "0",
+      "time": "0",
+      "logCount": "0",
+      "logsRoot": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+      "preimageLength": 159,
+      "certDigest": "0x29cdbf043332f5457dc292bbe58e9e2d47f4ce8c425b624e9b088900e1704baa"
+    },
+    {
+      "case": "cert/present-3-logs",
+      "networkId": "1597",
+      "seqNumber": "101",
+      "kind": "0x01",
+      "keyId": "7",
+      "chainId": "1",
+      "blockHash": "0xabababababababababababababababababababababababababababababababab",
+      "parentHash": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "number": "21000000",
+      "time": "1755000000",
+      "logCount": "3",
+      "logsRoot": "0x8c6e26c25502a62aa23c5ae614f1c237da67c382b9844b539275ea3da07011cf",
+      "preimageLength": 159,
+      "certDigest": "0xd14177b38a313090746b0a11245510712b85ec7c47e863a66db4e84bc4d1ea39"
+    },
+    {
+      "case": "cert/present-3-logs-kind-flipped-to-void",
+      "networkId": "1597",
+      "seqNumber": "101",
+      "kind": "0x00",
+      "keyId": "7",
+      "chainId": "1",
+      "blockHash": "0xabababababababababababababababababababababababababababababababab",
+      "parentHash": "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "number": "21000000",
+      "time": "1755000000",
+      "logCount": "3",
+      "logsRoot": "0x8c6e26c25502a62aa23c5ae614f1c237da67c382b9844b539275ea3da07011cf",
+      "preimageLength": 159,
+      "certDigest": "0x7e182a8c1a741329094fb219753f603dbefb0cf231aa44982f4d3f4a7943e6b3"
+    },
+    {
+      "case": "cert/max-width",
+      "networkId": "18446744073709551615",
+      "seqNumber": "18446744073709551615",
+      "kind": "0x01",
+      "keyId": "4294967295",
+      "chainId": "18446744073709551615",
+      "blockHash": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "parentHash": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "number": "18446744073709551615",
+      "time": "18446744073709551615",
+      "logCount": "4294967295",
+      "logsRoot": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "preimageLength": 159,
+      "certDigest": "0xcaf119688d33717aeddd01aa4a434c1f4c7b724b6c5d8d49a5ccf994289f2986"
+    }
+  ],
+  "signatures": {
+    "note": "The first signature cases in the vector. They sign the certificate cert/present-3-logs already pins, so a divergence here is a signature divergence and cannot be a preimage divergence. The recovery-id pair is a TWO-WAY discriminator: an implementation on the {27,28} convention gets the OPPOSITE verdict on both, so the convention cannot be got wrong and still pass.",
+    "testKey": {
+      "warning": "TEST MATERIAL. Its 32 bytes are the ASCII sentence below so that dumping the key in any tool states its own status. It is published, so it protects nothing and a certificate that verifies under it is a certificate anyone can forge. It MUST NEVER appear in a genesis file, a node or Sequencer configuration, a keystore, a deployment script, or any issuer registry on any network.",
+      "ascii": "rnk.vector.test.key.never.deploy",
+      "hex": "0x726e6b2e766563746f722e746573742e6b65792e6e657665722e6465706c6f79",
+      "issuerAddress": "0xfff0C37702e1Ac61A477Bb38feEC4ccE30914b3e"
+    },
+    "signedCertificate": {
+      "case": "cert/present-3-logs",
+      "preimage": "0x726e6b2e736571636572742e7631000000000000063d000000000000006501000000070000000000000001ababababababababababababababababababababababababababababababababcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd0000000001406f4000000000689b2cc0000000038c6e26c25502a62aa23c5ae614f1c237da67c382b9844b539275ea3da07011cf",
+      "preimageLength": 159,
+      "certDigest": "0xd14177b38a313090746b0a11245510712b85ec7c47e863a66db4e84bc4d1ea39"
+    },
+    "cases": [
+      {
+        "case": "sig/present-3-logs-valid",
+        "r": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a23",
+        "s": "0x6e291dd43bb229e567755c45604966328db6bb96e875de88ca4ec52032aca203",
+        "v": "0x01",
+        "signature": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a236e291dd43bb229e567755c45604966328db6bb96e875de88ca4ec52032aca20301",
+        "recoveredSigner": "0xfff0C37702e1Ac61A477Bb38feEC4ccE30914b3e",
+        "verdict": "VALID",
+        "reason": ""
+      },
+      {
+        "case": "sig/present-3-logs-recovery-id-in-the-27-28-convention",
+        "r": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a23",
+        "s": "0x6e291dd43bb229e567755c45604966328db6bb96e875de88ca4ec52032aca203",
+        "v": "0x1c",
+        "signature": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a236e291dd43bb229e567755c45604966328db6bb96e875de88ca4ec52032aca2031c",
+        "recoveredSigner": null,
+        "verdict": "INVALID",
+        "reason": "signature_encoding"
+      },
+      {
+        "case": "sig/present-3-logs-recovery-id-flipped",
+        "r": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a23",
+        "s": "0x6e291dd43bb229e567755c45604966328db6bb96e875de88ca4ec52032aca203",
+        "v": "0x00",
+        "signature": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a236e291dd43bb229e567755c45604966328db6bb96e875de88ca4ec52032aca20300",
+        "recoveredSigner": "0x4DE204Eb96d354F2c3f165A8cF07e34e99D8bD2E",
+        "verdict": "INVALID",
+        "reason": "signature"
+      },
+      {
+        "case": "sig/present-3-logs-high-s",
+        "r": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a23",
+        "s": "0x91d6e22bc44dd61a988aa3ba9fb699cc2cf8214fc6d2c1b2f583996c9d899f3e",
+        "v": "0x00",
+        "signature": "0xfafd3b45b4adbab0a101165078b53e481a801ad35e65e81843b31052ce190a2391d6e22bc44dd61a988aa3ba9fb699cc2cf8214fc6d2c1b2f583996c9d899f3e00",
+        "recoveredSigner": "0xfff0C37702e1Ac61A477Bb38feEC4ccE30914b3e",
+        "verdict": "INVALID",
+        "reason": "signature_encoding"
+      }
+    ],
+    "absentCase": {
+      "v": "0x1b",
+      "why": "Deliberately absent. v = 27 is invalid under BOTH conventions - a {27,28} verifier maps it to recovery id 0, which recovers a non-issuer - so a vector that pinned it as invalid would be passed by an implementation on either convention. Only the member that corresponds to the TRUE recovery id discriminates, which for this digest is 28."
+    }
+  }
+}
